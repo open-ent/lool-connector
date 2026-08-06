@@ -3,13 +3,13 @@
          xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>io.edifice</groupId>
+    <groupId>fr.openent</groupId>
     <artifactId>app-parent</artifactId>
     <version>1.2.1</version>
   </parent>
   <groupId>fr.openent</groupId>
   <artifactId>lool</artifactId>
-  <version>2.2.5</version>
+  <version>2.2.5-patched</version>
   <scm>
     <connection>scm:git:https://github.com/OPEN-ENT-NG/lool-connector.git</connection>
     <developerConnection>scm:git:https://github.com/OPEN-ENT-NG/lool-connector.git</developerConnection>
@@ -31,11 +31,11 @@
     <junitVersion>5.1.0</junitVersion>
     <powerMockVersion>2.0.2</powerMockVersion>
     <mockitoVersion>2.28.2</mockitoVersion>
-    <entCoreVersion>6.16.2</entCoreVersion>
+    <entCoreVersion>6.16.1</entCoreVersion>
     <gatlingHighchartsVersion>2.2.2</gatlingHighchartsVersion>
     <modMongoVersion>4.2.0</modMongoVersion>
     <modJsonSchemaValidatorVersion>2.2.0</modJsonSchemaValidatorVersion>
-    <entCoreLibsVersion>6.16.2</entCoreLibsVersion>
+    <entCoreLibsVersion>6.16.1</entCoreLibsVersion>
   </properties>
   <dependencies>
     <dependency>
@@ -43,13 +43,6 @@
       <artifactId>vertx-core</artifactId>
       <version>${vertxVersion}</version>
       <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.entcore</groupId>
-      <artifactId>common</artifactId>
-      <version>${entCoreLibsVersion}</version>
-      <classifier>fat</classifier>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
