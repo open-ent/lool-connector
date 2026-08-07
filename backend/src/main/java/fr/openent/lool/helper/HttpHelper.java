@@ -12,8 +12,6 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
-import static fr.openent.lool.provider.WopiProviders.OnlyOffice;
-
 public class HttpHelper {
     private final Vertx vertx;
 
@@ -30,9 +28,7 @@ public class HttpHelper {
     public HttpClient generateHttpClient(URL uri, WopiProviders type) {
         HttpClientOptions options = new HttpClientOptions()
                 .setDefaultHost(uri.getHost())
-//                .setDefaultPort("https".equals(uri.getScheme()) ? 9980 : 80)
-//                .setDefaultPort("https".equals(uri.getProtocol()) ? 443 : 80)
-                .setDefaultPort("https".equals(uri.getProtocol()) ? 443 : type.equals(OnlyOffice) ? uri.getPort() : 80)
+                .setDefaultPort(uri.getPort() != -1 ? uri.getPort() : ("https".equals(uri.getProtocol()) ? 443 : 80))
                 .setVerifyHost(false)
                 .setTrustAll(true)
                 .setSsl("https".equals(uri.getProtocol()))

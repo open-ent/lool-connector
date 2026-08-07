@@ -9,8 +9,7 @@ export class LibreOfficeOnline extends Provider {
 
     canBeOpen(metadata: Metadata): boolean {
         return drawExtensions.indexOf(metadata.extension) == -1 &&
-            metadata.extension in this.computedCapabilities &&
-            metadata["content-type"] === this.computedCapabilities[metadata.extension];
+            this.capabilities.some((capability) => capability["content-type"] === metadata["content-type"]);
     }
 
     setCapabilities(capabilities: Array<Metadata>): void {

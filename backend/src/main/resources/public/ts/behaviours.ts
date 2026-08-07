@@ -22,12 +22,15 @@ Behaviours.register('lool', {
     },
     initPostMessage,
     provider: null,
-    init: async function () { //FIXME Fix init issue. Use a event Listener to init sniplets
+    init: async function (callback?: () => void) {
         console.debug('Init behaviours')
         const context: Context = await this.getWopiContext();
         this.provider = ProviderFactory.provider(context.provider);
         this.provider.setCapabilities(context.capabilities);
         this.provider.setTemplates(context.templates);
+        if (typeof callback === 'function') {
+            callback();
+        }
         if (this.initCallback.length > 0) {
             console.debug('Calling init callbacks', this.initCallback);
             this.initCallback.map(cb => cb());
