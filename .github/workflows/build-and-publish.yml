@@ -1,0 +1,216 @@
+name: Build & Publish Fat Mod
+
+# lool est un module DUAL : deux IHM cohabitent dans le même fat mod.
+#   - legacy Angular/TS  : backend/gulpfile.js (gulp 3 + webpack 1, Node 10)
+#                          -> public/dist/{application,behaviours,monitoring}.js
+#   - React              : frontend/ (Vite + pnpm, deps publiques @edifice.io)
+#                          -> public/home.js (+ assets), chargé par view/lool-home.html
+# Les DEUX doivent être buildées avant `mvn package`, sinon le fat mod publié
+# répond 404 sur /lool/public/home.js (ou sur les vues Angular). L'étape
+# « Vérifier le contenu du fat JAR » verrouille ça avant toute publication.
+# Ordre repris du Jenkinsfile du dépôt (stages Frontend puis Backend).
+
+on:
+  push:
+    branches: ['**']
+    tags: ['*']
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      entcore_version:
+        description: 'Version entcore (ex: 6.16.1). Laissez vide pour utiliser celle du pom.xml.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    name: Build & Publish Fat Mod
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── IHM React : frontend/ (Vite, sortie dist-home/) ──────────────────
+      # pnpm avant setup-node pour que le cache 'pnpm' soit exploitable.
+      # Version de pnpm lue dans le champ packageManager de frontend/package.json.
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Build IHM React (Vite)
+        working-directory: frontend
+        # --no-frozen-lockfile : le lockfile committé traîne quelques peers non
+        # satisfaits ; un install figé échouerait alors que le build est sain.
+        run: |
+          pnpm install --no-frozen-lockfile
+          pnpm build
+          test -f dist-home/home.js
+
+      # ── IHM legacy Angular/TS : backend/ (gulp 3 exige Node 10) ──────────
+      - name: Build IHM legacy (Gulp / Node 10)
+        run: |
+          docker run --rm --user root \
+            -v "${{ github.workspace }}/backend:/workspace" \
+            -w /workspace \
+            node:10-alpine \
+            sh -c "npm install --legacy-peer-deps && node_modules/gulp/bin/gulp.js build"
+          # Le conteneur écrit en root : rendre la main au runner avant les cp/mvn.
+          sudo chown -R "$(id -u):$(id -g)" backend
+
+      # ── Injection du bundle React dans les resources du backend ──────────
+      # Recette du Jenkinsfile : dist-home/public/* + dist-home/*.js
+      # atterrissent à la RACINE de public/ (la vue charge /lool/public/home.js).
+      - name: Injecter le bundle React dans les resources
+        run: |
+          mkdir -p backend/src/main/resources/public
+          find backend/src/main/resources/public/ -maxdepth 1 -type f -exec rm -f {} +
+          cp -R frontend/dist-home/public/. backend/src/main/resources/public/
+          cp -R frontend/dist-home/*.js backend/src/main/resources/public/
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: temurin
+          cache: maven
+
+      - name: Configurer Maven pour GitHub Packages
+        # Le profil github-packages est requis pour résoudre le parent
+        # fr.openent:app-parent ; sans lui, mvn part en BUILD FAILURE.
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/settings.xml << EOF
+          <settings>
+            <servers>
+              <server>
+                <id>github</id>
+                <username>$GITHUB_ACTOR</username>
+                <password>$GITHUB_TOKEN</password>
+              </server>
+            </servers>
+            <profiles>
+              <profile>
+                <id>github-packages</id>
+                <repositories>
+                  <repository>
+                    <id>github</id>
+                    <name>GitHub open-ent Packages</name>
+                    <url>https://maven.pkg.github.com/open-ent/entcore-v2</url>
+                    <releases><enabled>true</enabled></releases>
+                    <snapshots><enabled>true</enabled></snapshots>
+                  </repository>
+                </repositories>
+              </profile>
+            </profiles>
+            <activeProfiles>
+              <activeProfile>github-packages</activeProfile>
+            </activeProfiles>
+          </settings>
+          EOF
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+
+      - name: Build fat JAR
+        working-directory: backend
+        # -Dmaven.test.skip=true (et pas -DskipTests) : saute aussi la
+        # COMPILATION des tests, qui réclame org.entcore:tests.
+        # buildNumber/scmBranch : sans eux le MANIFEST SCM-Commit-Id reste vide
+        # (checkout shallow) et la page Versions n'affiche aucun commit.
+        run: |
+          ENTCORE_OPT=""
+          if [ -n "$ENTCORE_VERSION" ]; then ENTCORE_OPT="-DentCoreVersion=$ENTCORE_VERSION"; fi
+          mvn clean package -Dmaven.test.skip=true -B $ENTCORE_OPT \
+            -DbuildNumber=${GITHUB_SHA::8} -DscmBranch=${GITHUB_REF_NAME}
+        env:
+          ENTCORE_VERSION: ${{ github.event.inputs.entcore_version }}
+
+      - name: Vérifier le contenu du fat JAR (les 2 IHM)
+        working-directory: backend
+        # Garde-fou anti-régression : un fat mod publié sans l'un des deux
+        # bundles casse l'application en production (404 silencieux).
+        run: |
+          FAT=$(ls target/*-fat.jar 2>/dev/null | head -1)
+          if [ -z "$FAT" ]; then echo "::error::Fat JAR absent de target/"; ls -la target/*.jar || true; exit 1; fi
+          echo "Fat JAR : $FAT"
+          for p in view/lool-home.html public/home.js public/dist/application.js public/dist/monitoring.js; do
+            if unzip -l "$FAT" "$p" 2>/dev/null | grep -q "$p"; then
+              echo "  OK      $p"
+            else
+              echo "::error::$p absent du fat JAR"; exit 1
+            fi
+          done
+
+      - name: Tests (sur pull request)
+        if: github.event_name == 'pull_request'
+        working-directory: backend
+        run: mvn test -B
+
+      - name: Publier le fat JAR sur GitHub Packages
+        # continue-on-error : GitHub Packages refuse d'écraser une version déjà
+        # publiée (409) — republier un tag -patched inchangé ne doit pas rougir.
+        continue-on-error: true
+        if: startsWith(github.ref, 'refs/tags/')
+        working-directory: backend
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout)
+          ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          FAT_JAR=$(ls target/*-fat.jar 2>/dev/null | head -1)
+          if [ -z "${FAT_JAR}" ]; then echo "::error::Fat JAR not found"; exit 1; fi
+          echo "Publishing ${GROUP_ID}:${ARTIFACT_ID}:${VERSION}:fat -> GitHub Packages"
+          mvn deploy:deploy-file \
+            -Dfile="${FAT_JAR}" \
+            -DgroupId="${GROUP_ID}" \
+            -DartifactId="${ARTIFACT_ID}" \
+            -Dversion="${VERSION}" \
+            -Dclassifier=fat \
+            -Dpackaging=jar \
+            -DrepositoryId=github \
+            -Durl="https://maven.pkg.github.com/${{ github.repository }}" \
+            -B
+
+      # Le launcher tire le classifier « fat » depuis rct-nexus : sans cette
+      # étape, un tag publié reste indéployable.
+      # Requiert les secrets NEXUS_USER / NEXUS_PASSWORD sur le dépôt
+      # (cf. scripts/set-ci-secrets.sh dans open-ent-mods).
+      - name: Publier le fat JAR sur rct-nexus
+        continue-on-error: true
+        if: startsWith(github.ref, 'refs/tags/')
+        working-directory: backend
+        env:
+          NEXUS_USER: ${{ secrets.NEXUS_USER }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+        run: |
+          if [ -z "${NEXUS_USER}" ]; then echo "::warning::NEXUS_USER absent — publication nexus sautée"; exit 0; fi
+          cat > /tmp/nx-settings.xml <<EOF
+          <settings><servers><server><id>pt-releases</id><username>${NEXUS_USER}</username><password>${NEXUS_PASSWORD}</password></server></servers></settings>
+          EOF
+          FAT_JAR=$(ls target/*-fat.jar 2>/dev/null | head -1)
+          if [ -z "${FAT_JAR}" ]; then echo "::error::Fat JAR not found"; exit 1; fi
+          FAT_ABS=$(realpath "${FAT_JAR}")
+          BASE=$(basename "${FAT_JAR}" -fat.jar)
+          GROUP_ID=${BASE%%~*}; REST=${BASE#*~}; ARTIFACT_ID=${REST%%~*}; VERSION=${REST#*~}
+          echo "Deploying ${GROUP_ID}:${ARTIFACT_ID}:${VERSION}:fat -> rct-nexus"
+          cd /tmp
+          mvn deploy:deploy-file -s /tmp/nx-settings.xml -Dfile="${FAT_ABS}" \
+            -DgroupId="${GROUP_ID}" -DartifactId="${ARTIFACT_ID}" -Dversion="${VERSION}" \
+            -Dclassifier=fat -Dpackaging=jar -DrepositoryId=pt-releases \
+            -Durl="https://rct-nexus.tech.fr/repository/maven-releases/" -B
+
+      - name: Créer la GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: backend/target/*-fat.jar
+          generate_release_notes: true
