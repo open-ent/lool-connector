@@ -7,8 +7,8 @@ export function hashEdificeBootstrap({ hash }: { hash: string }): Plugin {
     apply: "build",
     transformIndexHtml(html) {
       return html.replace(
-        "/assets/themes/edifice-bootstrap/index.css",
-        `/assets/themes/edifice-bootstrap/index.css?${hash}`,
+        "/assets/themes/openent-bootstrap/index.css",
+        `/assets/themes/openent-bootstrap/index.css?${hash}`,
       );
     },
   };

@@ -1,4 +1,4 @@
-import { odeServices } from "@edifice.io/client";
+import { odeServices } from "@open-ent/client";
 import { LOOL_ENDPOINTS, DOC_TYPE_TO_EXTENSION, LoolDocType } from "./lool.constants";
 
 // Re-export LoolDocType for convenience

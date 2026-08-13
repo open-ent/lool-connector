@@ -1,4 +1,4 @@
-import { Grid, Card, Radio, useEdificeClient } from "@edifice.io/react";
+import { Grid, Card, Radio, useEdificeClient } from "@open-ent/react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 
