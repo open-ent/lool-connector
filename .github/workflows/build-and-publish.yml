@@ -48,6 +48,10 @@ jobs:
 
       - name: Build IHM React (Vite)
         working-directory: frontend
+        # frontend/.npmrc authentifie npm.pkg.github.com avec NODE_AUTH_TOKEN pour les
+        # paquets privés @open-ent/* — le GITHUB_TOKEN d'Actions ne les lit pas (cross-repo).
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.OPENENT_PACKAGES_TOKEN }}
         # --no-frozen-lockfile : le lockfile committé traîne quelques peers non
         # satisfaits ; un install figé échouerait alors que le build est sain.
         run: |
