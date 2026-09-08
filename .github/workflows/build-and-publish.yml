@@ -36,7 +36,7 @@ jobs:
       # ── IHM React : frontend/ (Vite, sortie dist-home/) ──────────────────
       # pnpm avant setup-node pour que le cache 'pnpm' soit exploitable.
       # Version de pnpm lue dans le champ packageManager de frontend/package.json.
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           package_json_file: frontend/package.json
 
