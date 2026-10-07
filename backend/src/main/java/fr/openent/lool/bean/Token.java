@@ -38,10 +38,11 @@ public class Token {
                         .put(Field.ID, this.document);
                 eb.request("org.entcore.workspace", action, handlerToAsyncHandler(message -> {
                     JsonObject body = message.body();
-                    if (!Field.OK.equals(body.getString(Field.STATUS))) {
+                    JsonObject result = body.getJsonObject("result");
+                    if (!Field.OK.equals(body.getString(Field.STATUS)) || result == null || result.isEmpty()) {
                         handler.handle(new Either.Left<>("[Token@contructor] An error occurred when calling document"));
                     } else {
-                        this.filename = message.body().getJsonObject("result").getString(Field.NAME);
+                        this.filename = result.getString(Field.NAME);
                         handler.handle(new Either.Right<>(this));
                     }
                 }));

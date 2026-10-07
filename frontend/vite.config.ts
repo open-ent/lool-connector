@@ -47,10 +47,22 @@ export default ({ mode }: { mode: string }) => {
     base: mode === "production" ? "/lool" : "",
     root: __dirname,
     cacheDir: "./node_modules/.vite/lool-home",    resolve: {
+      // Instance unique des libs partagées (sinon odeServices non initialisé).
+      dedupe: [
+        "react",
+        "react-dom",
+        "@tanstack/react-query",
+        "react-i18next",
+        "i18next",
+        "@open-ent/client",
+        "@open-ent/react",
+        "@open-ent/bootstrap",
+        "@open-ent/utilities",
+      ],
       alias: {
         "@images": resolve(
           __dirname,
-          "node_modules/@edifice.io/bootstrap/dist/images",
+          "node_modules/@open-ent/bootstrap/dist/images",
         ),
       },
     },    

@@ -6,8 +6,8 @@ import {
   Button,
   Card,
   useEdificeClient,
-} from "@edifice.io/react";
-import { IconAdd } from "@edifice.io/react/icons";
+} from "@open-ent/react";
+import { IconAdd } from "@open-ent/react/icons";
 import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 import clsx from "clsx";

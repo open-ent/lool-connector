@@ -9,7 +9,7 @@ import {
   FormControl,
   Label,
   useEdificeClient,
-} from "@edifice.io/react";
+} from "@open-ent/react";
 import { DocumentTypeCards } from "./DocumentTypeCards";
 import { useHomeStore } from "../store/home.store";
 import { loolService } from "../services/api/lool.service";

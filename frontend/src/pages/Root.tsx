@@ -1,4 +1,4 @@
-import { Layout } from "@edifice.io/react";
+import { Layout } from "@open-ent/react";
 import { Outlet } from "react-router-dom";
 
 export const Root = () => {

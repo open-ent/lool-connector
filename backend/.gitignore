@@ -19,3 +19,18 @@ node_modules
 .env
 target
 dependency-reduced-pom.xml
+
+# Artefacts de build des IHM (régénérés par build-and-publish.yml / Jenkinsfile).
+# La racine de src/main/resources/public/ est un répertoire de SORTIE : le
+# Jenkinsfile y fait « find -maxdepth 1 -type f -exec rm -f » avant chaque build.
+src/main/resources/public/dist
+src/main/resources/public/home.js
+/src/main/resources/public/*.js
+/src/main/resources/public/*.css
+/src/main/resources/public/*.woff
+/src/main/resources/public/*.woff2
+/src/main/resources/public/*.ttf
+/src/main/resources/public/*.jpg
+/src/main/resources/public/*.png
+/src/main/resources/public/*.gif
+/src/main/resources/public/*.svg

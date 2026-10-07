@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { LoadingScreen } from "@edifice.io/react";
+import { LoadingScreen } from "@open-ent/react";
 import { useProviderContext } from "../services/queries/lool.query";
 import { useHomeStore } from "../store/home.store";
 import { CreateDocumentModal } from "../components/CreateDocumentModal";
