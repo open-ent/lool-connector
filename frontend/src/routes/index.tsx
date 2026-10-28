@@ -2,6 +2,7 @@ import { RouteObject, createBrowserRouter } from "react-router-dom";
 import { Root } from "../pages/Root";
 import { HomeCreation } from "../pages/HomeCreation";
 import { ModalPage } from "../pages/ModalPage";
+import { Monitoring } from "../pages/Monitoring";
 
 const routes: RouteObject[] = [
   {
@@ -11,6 +12,10 @@ const routes: RouteObject[] = [
       {
         index: true,
         element: <HomeCreation />,
+      },
+      {
+        path: "dashboard",
+        element: <Monitoring />,
       },
     ],
   },

@@ -7,6 +7,7 @@ import fr.wseduc.rs.Get;
 import fr.wseduc.security.ActionType;
 import fr.wseduc.security.SecuredAction;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.json.JsonObject;
 import org.entcore.common.controller.ControllerHelper;
 
 import static org.entcore.common.http.response.DefaultResponseHandler.arrayResponseHandler;
@@ -20,7 +21,15 @@ public class MonitoringController extends ControllerHelper {
     @ApiDoc("Render monitoring view")
     @SecuredAction("monitoring")
     public void monitoring(HttpServerRequest request) {
-        renderView(request, null, "monitoring.html", null);
+        // IHM : dérogation d'URL `?ui=react|angular`, sinon React.
+        // Le tableau de bord est un outil d'administration : pas de préférence par usager.
+        final String forced = request.getParam("ui");
+        final String ui = ("react".equals(forced) || "angular".equals(forced)) ? forced : "react";
+        if ("react".equals(ui)) {
+            renderView(request, new JsonObject(), "lool-home.html", null);
+        } else {
+            renderView(request, null, "monitoring.html", null);
+        }
     }
 
     @Get("/monitoring/documents")

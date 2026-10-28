@@ -58,6 +58,7 @@
   "lool.notify.shared": "La donnée a été partagée",
   "lool.notify.trashed": "La donnée a été mise à la corbeille",
   "lool.opened.files": "Documents ouverts",
+  "lool.monitoring.error": "Certaines statistiques n'ont pas pu être chargées.",
   "lool.other": "autres",
   "lool.read": "Lecture",
   "lool.select.provider": "Sélectionner un fournisseur",
