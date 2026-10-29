@@ -92,6 +92,24 @@ public class LoolController extends ControllerHelper {
         renderJson(request, config);
     }
 
+    /**
+     * Contexte de la page d'ouverture, en JSON posé dans la page. Chaque « < » est écrit en \\u003c : aucune valeur ne peut refermer la
+     * balise qui le porte. Clés lues par le front : documentId, accessToken, resync, providerName, durationToken, redirection, server,
+     * docsApiConfig.
+     */
+    public static String docContextJson(JsonObject params) {
+        final JsonObject context = new JsonObject()
+                .put("documentId", params.getValue("document-id"))
+                .put("accessToken", params.getValue("access-token"))
+                .put("resync", String.valueOf(params.getValue("resync")))
+                .put("providerName", params.getValue("provider-name"))
+                .put("durationToken", params.getValue("duration-token"))
+                .put("redirection", params.getValue("redirection"))
+                .put("server", params.getValue("server"))
+                .put("docsApiConfig", params.getValue("docs-api-config"));
+        return context.encode().replace("<", "\\u003c");
+    }
+
     @Get("/documents/:id/open")
     @ApiDoc("Open document in Libre Office Online")
     @SecuredAction("open.file")
@@ -131,7 +149,14 @@ public class LoolController extends ControllerHelper {
                                             .put("provider-name",wopiService.provider().type())
                                             .put("duration-token",duration_token + ts.getTime())
                                             .put("docs-api-config", docsApiConfig);
-                                    renderView(request, params, "doc.html", null);
+                                    // Nouvelle page (React) par défaut ; `?ui=angular` garde l'ancienne le temps de la cohabitation
+                                    if ("angular".equals(request.getParam("ui"))) {
+                                        renderView(request, params, "doc.html", null);
+                                    } else {
+                                        renderView(request, new JsonObject()
+                                                .put("provider-name", wopiService.provider().type())
+                                                .put("doc-json", docContextJson(params)), "doc-react.html", null);
+                                    }
                                     eventStore.createAndStoreEvent(Actions.ACCESS.name(), request);
                                     TraceHelper.add(Actions.ACCESS.name(), token.getUser(), token.getDocument(), TraceHelper.getFileExtension(document.getString(Field.NAME)));
                                 } else {

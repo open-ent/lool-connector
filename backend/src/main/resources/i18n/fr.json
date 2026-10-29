@@ -99,5 +99,10 @@
   "title": "Titre",
   "unsetImage": "Supprimer l'image",
   "user": "Utilisateur",
-  "workspace.myDocuments": "Documents personnels"
+  "workspace.myDocuments": "Documents personnels",
+  "lool.insert.image.title": "Insérer une image",
+  "lool.insert.image.search": "Rechercher une image par son nom",
+  "lool.insert.image.loading": "Chargement des images…",
+  "lool.insert.image.empty": "Aucune image trouvée dans votre espace documentaire.",
+  "cancel": "Annuler"
 }

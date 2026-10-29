@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{{provider-name}}</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="viewport" content="initial-scale=1, maximum-scale=1">
+        <link id="favicon" rel="icon" type="image/x-icon" href="/assets/themes/edifice-bootstrap/img/illustrations/favicon.ico" />
+        <link rel="stylesheet" href="/assets/themes/openent-bootstrap/index.css" />
+    </head>
+
+    <body class="lool" style="margin: 0">
+        <div id="root"></div>
+        <div id="portal"></div>
+        <!-- Contexte de l'ouverture (jeton, adresse de l'éditeur…) : lu par la page React -->
+        <script id="lool-doc" type="application/json">{{{doc-json}}}</script>
+        <script type="module" src="/lool/public/home.js?v=@@VERSION"></script>
+    </body>
+</html>

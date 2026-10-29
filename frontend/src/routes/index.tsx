@@ -3,6 +3,7 @@ import { Root } from "../pages/Root";
 import { HomeCreation } from "../pages/HomeCreation";
 import { ModalPage } from "../pages/ModalPage";
 import { Monitoring } from "../pages/Monitoring";
+import { DocumentPage } from "../pages/DocumentPage";
 
 const routes: RouteObject[] = [
   {
@@ -18,6 +19,10 @@ const routes: RouteObject[] = [
         element: <Monitoring />,
       },
     ],
+  },
+  {
+    path: "/documents/:id/open",
+    element: <DocumentPage />,
   },
   {
     path: "/modal/create",
