@@ -1,7 +1,7 @@
 name: Build & Publish Fat Mod
 
 # lool est un module DUAL : deux IHM cohabitent dans le même fat mod.
-#   - legacy Angular/TS  : backend/gulpfile.js (gulp 3 + webpack 1, Node 10)
+#   - legacy Angular/TS  : backend/gulpfile.js (gulp 5 + webpack 1, Node 26)
 #                          -> public/dist/{application,behaviours,monitoring}.js
 #   - React              : frontend/ (Vite + pnpm, deps publiques @edifice.io)
 #                          -> public/home.js (+ assets), chargé par view/lool-home.html
@@ -50,7 +50,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '26'
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
 
@@ -67,13 +67,13 @@ jobs:
           pnpm build
           test -f dist-home/home.js
 
-      # ── IHM legacy Angular/TS : backend/ (gulp 3 exige Node 10) ──────────
-      - name: Build IHM legacy (Gulp / Node 10)
+      # ── IHM legacy Angular/TS : backend/ (gulp 5, Node 26) ───────────────
+      - name: Build IHM legacy (Gulp / Node 26)
         run: |
           docker run --rm --user root \
             -v "${{ github.workspace }}/backend:/workspace" \
             -w /workspace \
-            node:10-alpine \
+            node:26-alpine \
             sh -c "npm install --legacy-peer-deps && node_modules/gulp/bin/gulp.js build"
           # Le conteneur écrit en root : rendre la main au runner avant les cp/mvn.
           sudo chown -R "$(id -u):$(id -g)" backend
@@ -90,7 +90,7 @@ jobs:
 
       - uses: actions/setup-java@v6
         with:
-          java-version: '21'
+          java-version: '25'
           distribution: temurin
           cache: maven
 
@@ -166,7 +166,10 @@ jobs:
           FAT=$(ls target/*-fat.jar 2>/dev/null | head -1)
           if [ -z "$FAT" ]; then echo "::error::Fat JAR absent de target/"; ls -la target/*.jar || true; exit 1; fi
           echo "Fat JAR : $FAT"
-          for p in view/lool-home.html public/home.js public/dist/application.js public/dist/monitoring.js; do
+          # securedaction/ et routes/ : depuis le JDK 23, javac n'exécute plus les processeurs
+          # d'annotations trouvés sur le classpath ; sans `-proc:full` (pom), le jar part sans
+          # eux et chaque route sécurisée répond 404 — sans aucune erreur de build.
+          for p in view/lool-home.html public/home.js public/dist/application.js public/dist/monitoring.js securedaction/ routes/; do
             if unzip -l "$FAT" "$p" 2>/dev/null | grep -q "$p"; then
               echo "  OK      $p"
             else
@@ -178,7 +181,7 @@ jobs:
         if: github.event_name == 'pull_request'
         working-directory: backend
         # profil `scala` d'app-parent désactivé : maven-scala-plugin 2.15.2 ne lit pas le
-        # bytecode du JDK 21, et aucun module applicatif n'a de source Scala.
+        # bytecode des JDK récents, et aucun module applicatif n'a de source Scala.
         run: mvn test -B -P '!scala'
 
       - name: Publier le fat JAR sur GitHub Packages

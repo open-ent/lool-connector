@@ -1,6 +1,6 @@
 services:
   node:
-    image: opendigitaleducation/node:20-alpine-pnpm
+    image: node:26-alpine
     working_dir: /home/node/app
     environment:
       - TIPTAP_PRO_TOKEN
